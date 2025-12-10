@@ -2,9 +2,9 @@
 
 namespace Jatniel\Pexels;
 
+use Jatniel\Pexels\Commands\PexelsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Jatniel\Pexels\Commands\PexelsCommand;
 
 class PexelsServiceProvider extends PackageServiceProvider
 {
