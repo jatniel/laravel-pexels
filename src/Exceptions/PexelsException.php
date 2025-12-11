@@ -13,6 +13,6 @@ class PexelsException extends Exception
 
     public static function invalidResponse(string $message = ''): self
     {
-        return new self('Invalid response from Pexels API.' . ($message ? " {$message}" : ''));
+        return new self('Invalid response from Pexels API.'.($message ? " {$message}" : ''));
     }
 }

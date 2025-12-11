@@ -78,5 +78,5 @@ return [
     'attribution' => [
         'format' => 'Photo by :photographer on Pexels',
         'link_to_profile' => true,
-    ]
+    ],
 ];
