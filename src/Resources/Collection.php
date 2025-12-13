@@ -5,13 +5,13 @@ namespace Jatniel\Pexels\Resources;
 readonly class Collection
 {
     public function __construct(
-        public string  $id,
-        public string  $title,
+        public string $id,
+        public string $title,
         public ?string $description,
-        public bool    $private,
-        public int     $mediaCount,
-        public int     $photosCount,
-        public int     $videosCount,
+        public bool $private,
+        public int $mediaCount,
+        public int $photosCount,
+        public int $videosCount,
     ) {}
 
     public static function fromArray(array $data): self
