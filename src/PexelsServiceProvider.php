@@ -17,6 +17,6 @@ class PexelsServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(Pexels::class, fn () => new Pexels());
+        $this->app->singleton(Pexels::class, fn () => new Pexels);
     }
 }
