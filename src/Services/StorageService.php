@@ -78,7 +78,7 @@ class StorageService
         }
 
         // Delete all sizes
-        $directory = $this->getBasePath() . '/' . $photoId;
+        $directory = $this->getBasePath().'/'.$photoId;
 
         return $disk->deleteDirectory($directory);
     }
@@ -130,5 +130,4 @@ class StorageService
     {
         return Storage::disk($this->getDisk())->url($path);
     }
-    
 }
