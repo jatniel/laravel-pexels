@@ -114,5 +114,5 @@ class PexelsClient
     {
         return 'pexels:' . md5($endpoint . serialize($query));
     }
-    
+
 }
