@@ -1,6 +1,6 @@
 <?php
 
-namespace Jatniel\Pexels\Exceptions;
+namespace Jatniel\Pexels\Contracts;
 
 interface PexelsResourceInterface
 {
