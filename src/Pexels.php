@@ -64,5 +64,5 @@ class Pexels
 
         return $this->client;
     }
-    
+
 }
