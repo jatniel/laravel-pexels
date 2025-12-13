@@ -89,5 +89,4 @@ class PhotoService
     {
         return collect($photos)->map(fn (array $photo) => Photo::fromArray($photo));
     }
-
 }

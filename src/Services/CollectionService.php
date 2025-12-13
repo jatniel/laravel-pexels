@@ -41,5 +41,4 @@ class CollectionService
         return collect($response['media'] ?? [])
             ->map(fn (array $photo) => Photo::fromArray($photo));
     }
-
 }

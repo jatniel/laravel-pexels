@@ -112,7 +112,6 @@ class PexelsClient
      */
     private function getCacheKey(string $endpoint, array $query): string
     {
-        return 'pexels:' . md5($endpoint . serialize($query));
+        return 'pexels:'.md5($endpoint.serialize($query));
     }
-
 }
