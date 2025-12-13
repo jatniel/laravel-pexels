@@ -7,15 +7,15 @@ use Jatniel\Pexels\Contracts\PexelsResourceInterface;
 readonly class Photo implements PexelsResourceInterface
 {
     public function __construct(
-        public int     $id,
-        public int     $width,
-        public int     $height,
-        public string  $url,
-        public string  $photographer,
-        public string  $photographerUrl,
-        public int     $photographerId,
-        public string  $avgColor,
-        public array   $src,
+        public int $id,
+        public int $width,
+        public int $height,
+        public string $url,
+        public string $photographer,
+        public string $photographerUrl,
+        public int $photographerId,
+        public string $avgColor,
+        public array $src,
         public ?string $alt = null,
     ) {}
 
@@ -85,5 +85,4 @@ readonly class Photo implements PexelsResourceInterface
             'alt' => $this->alt,
         ];
     }
-
 }
