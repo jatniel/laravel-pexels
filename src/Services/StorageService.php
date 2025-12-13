@@ -130,5 +130,5 @@ class StorageService
     {
         return Storage::disk($this->getDisk())->url($path);
     }
-    
+
 }
