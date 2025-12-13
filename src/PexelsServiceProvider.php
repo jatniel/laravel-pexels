@@ -2,6 +2,9 @@
 
 namespace Jatniel\Pexels;
 
+use Illuminate\Support\Facades\Blade;
+use Jatniel\Pexels\Components\Background;
+use Jatniel\Pexels\Components\Image;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -17,6 +20,12 @@ class PexelsServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(Pexels::class, fn () => new Pexels);
+        $this->app->singleton(Pexels::class, fn () => new Pexels());
+    }
+
+    public function packageBooted(): void
+    {
+        Blade::component('pexels-image', Image::class);
+        Blade::component('pexels-background', Background::class);
     }
 }
