@@ -23,5 +23,4 @@ class DownloadPhotoJob implements ShouldQueue
     {
         $storageService->download($this->photo, $this->sizes);
     }
-
 }

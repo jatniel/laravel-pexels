@@ -47,7 +47,7 @@ class Pexels
     public function storage(): StorageService
     {
         if ($this->storageService === null) {
-            $this->storageService = new StorageService();
+            $this->storageService = new StorageService;
         }
 
         return $this->storageService;
@@ -59,10 +59,9 @@ class Pexels
     private function getClient(): PexelsClient
     {
         if ($this->client === null) {
-            $this->client = new PexelsClient();
+            $this->client = new PexelsClient;
         }
 
         return $this->client;
     }
-
 }
