@@ -11,4 +11,3 @@ parameters:
     checkModelProperties: true
     ignoreErrors:
             - '#Called .env. outside of the config directory#'
-            - '#Parameter \#1 \$view of function view expects view-string\|null, string given#'

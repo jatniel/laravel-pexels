@@ -2,21 +2,11 @@
 
 namespace Jatniel\Pexels\Tests;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Jatniel\Pexels\PexelsServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Jatniel\\Pexels\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
-    }
-
     protected function getPackageProviders($app)
     {
         return [
@@ -26,12 +16,8 @@ class TestCase extends Orchestra
 
     public function getEnvironmentSetUp($app)
     {
-        config()->set('database.default', 'testing');
-
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/../database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+        config()->set('pexels.api_key', 'test-api-key');
+        config()->set('pexels.cache.enabled', false);
+        config()->set('pexels.rate_limit.enabled', false);
     }
 }

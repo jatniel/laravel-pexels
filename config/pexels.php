@@ -49,7 +49,7 @@ return [
     */
     'rate_limit' => [
         'enabled' => env('PEXELS_RATE_LIMIT_ENABLED', true),
-        'request_per_hour' => env('PEXELS_RATE_LIMIT_REQUEST', 200),
+        'requests_per_hour' => env('PEXELS_RATE_LIMIT_REQUESTS', 200),
     ],
 
     /*
