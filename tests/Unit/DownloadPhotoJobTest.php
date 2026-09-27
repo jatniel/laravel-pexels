@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,7 @@ it('implements ShouldQueue', function () {
     $photo = Photo::fromArray(Helpers::photoData());
     $job = new DownloadPhotoJob($photo, ['original']);
 
-    expect($job)->toBeInstanceOf(\Illuminate\Contracts\Queue\ShouldQueue::class);
+    expect($job)->toBeInstanceOf(ShouldQueue::class);
 });
 
 it('downloads photo using storage service when handled', function () {
