@@ -19,19 +19,22 @@ class StorageService
     ) {}
 
     /**
-     * Download a photo to local storage.
+     * Download a photo to local storage, skipping sizes already stored unless forced.
      *
      * @param  string|list<string>  $sizes
      * @return array<string, string> Public URL keyed by size.
      */
-    public function download(Photo $photo, string|array $sizes = 'original'): array
+    public function download(Photo $photo, string|array $sizes = 'original', bool $force = false): array
     {
         $paths = [];
 
         foreach ((array) $sizes as $size) {
             $path = $this->buildPath($photo->id, $size);
 
-            $this->downloadFile($photo->getUrl($size), $path);
+            if ($force || ! $this->disk()->exists($path)) {
+                $this->downloadFile($photo->getUrl($size), $path);
+            }
+
             $paths[$size] = $this->disk()->url($path);
         }
 
@@ -81,17 +84,17 @@ class StorageService
     }
 
     /**
-     * Download a file from URL to storage.
+     * Stream a file from URL to storage without loading it into memory.
      */
     private function downloadFile(string $url, string $path): void
     {
-        $response = Http::get($url);
+        $response = Http::withOptions(['stream' => true])->get($url);
 
         if ($response->failed()) {
             throw PexelsException::invalidResponse('Failed to download photo.');
         }
 
-        $this->disk()->put($path, $response->body());
+        $this->disk()->writeStream($path, $response->resource());
     }
 
     private function buildPath(int $photoId, string $size): string

@@ -22,8 +22,8 @@ it('downloads a photo in a single size', function () {
 
     $paths = $this->service->download($this->photo, 'original');
 
-    expect($paths)->toHaveKey('original');
-    Storage::disk('public')->assertExists('pexels/12345/original.jpg');
+    expect($paths)->toHaveKey('original')
+        ->and(Storage::disk('public')->get('pexels/12345/original.jpg'))->toBe('fake-image-content');
 });
 
 it('downloads a photo in multiple sizes', function () {
@@ -37,6 +37,20 @@ it('downloads a photo in multiple sizes', function () {
     Storage::disk('public')->assertExists('pexels/12345/original.jpg');
     Storage::disk('public')->assertExists('pexels/12345/medium.jpg');
     Storage::disk('public')->assertExists('pexels/12345/small.jpg');
+});
+
+it('skips sizes already stored unless forced', function () {
+    Http::fake([
+        'images.pexels.com/*' => Http::response('new-content'),
+    ]);
+    Storage::disk('public')->put('pexels/12345/original.jpg', 'old-content');
+
+    $this->service->download($this->photo, 'original');
+    Http::assertNothingSent();
+    expect(Storage::disk('public')->get('pexels/12345/original.jpg'))->toBe('old-content');
+
+    $this->service->download($this->photo, 'original', force: true);
+    expect(Storage::disk('public')->get('pexels/12345/original.jpg'))->toBe('new-content');
 });
 
 it('throws exception when download fails', function () {
