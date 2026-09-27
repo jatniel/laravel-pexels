@@ -18,19 +18,24 @@ function createPhotoService(): PhotoService
     return new PhotoService(app(PexelsClient::class));
 }
 
-it('searches photos by query', function () {
+it('searches photos with filters and returns a paginator', function () {
     Http::fake([
-        'api.pexels.com/v1/search*' => Http::response(Helpers::searchResponse(3)),
+        'api.pexels.com/v1/search*' => Http::response(array_merge(Helpers::searchResponse(3), ['total_results' => 120, 'page' => 2, 'per_page' => 10])),
     ]);
 
-    $photos = createPhotoService()->search('nature', perPage: 10, page: 1);
+    $photos = createPhotoService()->search('nature', perPage: 10, page: 2, orientation: 'landscape', color: 'blue');
 
     expect($photos)->toHaveCount(3)
-        ->and($photos->first())->toBeInstanceOf(Photo::class);
+        ->and($photos->first())->toBeInstanceOf(Photo::class)
+        ->and($photos->total())->toBe(120)
+        ->and($photos->currentPage())->toBe(2)
+        ->and($photos->lastPage())->toBe(12);
 
-    Http::assertSent(fn ($request) => str_contains($request->url(), '/search')
-        && $request['query'] === 'nature'
+    Http::assertSent(fn ($request) => $request['query'] === 'nature'
         && $request['per_page'] === 10
+        && $request['orientation'] === 'landscape'
+        && $request['color'] === 'blue'
+        && ! isset($request['size'])
     );
 });
 
@@ -96,6 +101,8 @@ it('gets a random photo with query', function () {
     $photo = createPhotoService()->random('nature');
 
     expect($photo)->toBeInstanceOf(Photo::class);
+
+    Http::assertSent(fn ($request) => $request['page'] === 1 && $request['per_page'] === 80);
 });
 
 it('gets a random photo without query (curated)', function () {
