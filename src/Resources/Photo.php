@@ -53,15 +53,18 @@ readonly class Photo implements Arrayable, JsonSerializable
         return array_keys($this->src);
     }
 
+    /**
+     * Get the attribution as escaped HTML, safe to print with {!! !!}.
+     */
     public function getAttribution(bool $withLink = true): string
     {
         $format = config('pexels.attribution.format', 'Photo by :photographer on Pexels');
-        $text = str_replace(':photographer', $this->photographer, $format);
+        $text = e(str_replace(':photographer', $this->photographer, $format));
 
         if ($withLink && config('pexels.attribution.link_to_profile', true)) {
             return sprintf(
                 '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-                $this->photographerUrl,
+                e($this->photographerUrl),
                 $text
             );
         }
