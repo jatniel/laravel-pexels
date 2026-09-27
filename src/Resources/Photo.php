@@ -2,9 +2,13 @@
 
 namespace Jatniel\Pexels\Resources;
 
-use Jatniel\Pexels\Contracts\PexelsResourceInterface;
+use Illuminate\Contracts\Support\Arrayable;
+use JsonSerializable;
 
-readonly class Photo implements PexelsResourceInterface
+/**
+ * @implements Arrayable<string, mixed>
+ */
+readonly class Photo implements Arrayable, JsonSerializable
 {
     public function __construct(
         public int $id,
@@ -33,11 +37,6 @@ readonly class Photo implements PexelsResourceInterface
             src: $data['src'],
             alt: $data['alt'] ?? null,
         );
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
     }
 
     public function getUrl(?string $size = null): string
@@ -84,5 +83,13 @@ readonly class Photo implements PexelsResourceInterface
             'src' => $this->src,
             'alt' => $this->alt,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

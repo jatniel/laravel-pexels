@@ -19,7 +19,7 @@ it('makes a GET request with authorization header', function () {
         'api.pexels.com/v1/search*' => Http::response(Helpers::searchResponse()),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $result = $client->get('/search', ['query' => 'nature']);
 
     Http::assertSent(function ($request) {
@@ -36,7 +36,7 @@ it('throws exception when api key is missing', function () {
     config()->set('pexels.api_key', null);
     config()->set('pexels.api_key_test', null);
 
-    new PexelsClient;
+    app(PexelsClient::class)->get('/curated');
 })->throws(PexelsException::class, 'Pexels API key is not configured');
 
 it('uses test api key in non-production environment', function () {
@@ -48,7 +48,7 @@ it('uses test api key in non-production environment', function () {
         'api.pexels.com/v1/*' => Http::response(['data' => 'ok']),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $client->get('/curated');
 
     Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'test-key'));
@@ -59,7 +59,7 @@ it('throws exception on failed response', function () {
         'api.pexels.com/v1/*' => Http::response('Server Error', 500),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $client->get('/search', ['query' => 'test']);
 })->throws(PexelsException::class, 'Pexels API request failed with status 500.');
 
@@ -71,7 +71,7 @@ it('caches responses when cache is enabled', function () {
         'api.pexels.com/v1/*' => Http::response(Helpers::searchResponse()),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
 
     // First call - hits the API
     $result1 = $client->get('/search', ['query' => 'nature']);
@@ -89,7 +89,7 @@ it('skips cache when disabled', function () {
         'api.pexels.com/v1/*' => Http::response(Helpers::searchResponse()),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $client->get('/search', ['query' => 'nature']);
     $client->get('/search', ['query' => 'nature']);
 
@@ -106,7 +106,7 @@ it('throws rate limit exception when limit is exceeded', function () {
 
     RateLimiter::clear('pexels-api-requests');
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $client->get('/search', ['query' => 'test1']);
     $client->get('/search', ['query' => 'test2']);
 
@@ -125,7 +125,7 @@ it('does not count cached responses against the rate limit', function () {
 
     RateLimiter::clear('pexels-api-requests');
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
     $client->get('/search', ['query' => 'nature']);
     $client->get('/search', ['query' => 'nature']);
 
@@ -137,7 +137,7 @@ it('throws rate limit exception when the API returns 429', function () {
         'api.pexels.com/v1/*' => Http::response('Too Many Requests', 429),
     ]);
 
-    (new PexelsClient)->get('/curated');
+    app(PexelsClient::class)->get('/curated');
 })->throws(RateLimitException::class);
 
 it('does not check rate limit when disabled', function () {
@@ -147,7 +147,7 @@ it('does not check rate limit when disabled', function () {
         'api.pexels.com/v1/*' => Http::response(Helpers::searchResponse()),
     ]);
 
-    $client = new PexelsClient;
+    $client = app(PexelsClient::class);
 
     // Should not throw even with many requests
     for ($i = 0; $i < 5; $i++) {

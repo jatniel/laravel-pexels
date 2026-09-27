@@ -60,7 +60,7 @@ it('dispatches download job for async processing', function () {
 
 it('dispatches download job on configured queue', function () {
     Queue::fake();
-    config()->set('pexels.queue.name', 'custom-queue');
+    $this->service = new StorageService(queue: 'custom-queue');
 
     $this->service->downloadAsync($this->photo, 'original');
 
@@ -111,26 +111,24 @@ it('deletes all sizes for a photo', function () {
 
 it('uses configured storage disk', function () {
     Storage::fake('custom');
-    config()->set('pexels.storage.disk', 'custom');
 
     Http::fake([
         'images.pexels.com/*' => Http::response('fake-image-content'),
     ]);
 
-    $service = new StorageService;
+    $service = new StorageService(disk: 'custom');
     $service->download($this->photo, 'original');
 
     Storage::disk('custom')->assertExists('pexels/12345/original.jpg');
 });
 
 it('uses configured storage path', function () {
-    config()->set('pexels.storage.path', 'custom-path');
 
     Http::fake([
         'images.pexels.com/*' => Http::response('fake-image-content'),
     ]);
 
-    $service = new StorageService;
+    $service = new StorageService(path: 'custom-path');
     $service->download($this->photo, 'original');
 
     Storage::disk('public')->assertExists('custom-path/12345/original.jpg');

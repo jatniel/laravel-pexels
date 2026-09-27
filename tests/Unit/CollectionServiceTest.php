@@ -15,7 +15,7 @@ beforeEach(function () {
 
 function createCollectionService(): CollectionService
 {
-    return new CollectionService(new PexelsClient);
+    return new CollectionService(app(PexelsClient::class));
 }
 
 it('gets all collections', function () {

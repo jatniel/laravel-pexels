@@ -15,7 +15,7 @@ beforeEach(function () {
 
 function createPhotoService(): PhotoService
 {
-    return new PhotoService(new PexelsClient);
+    return new PhotoService(app(PexelsClient::class));
 }
 
 it('searches photos by query', function () {

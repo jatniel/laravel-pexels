@@ -71,7 +71,6 @@ return [
     |
     */
     'queue' => [
-        'enabled' => env('PEXELS_QUEUE_ENABLED', true),
         'connection' => env('PEXELS_QUEUE_CONNECTION'),
         'name' => env('PEXELS_QUEUE_NAME', 'pexels'),
     ],

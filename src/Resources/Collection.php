@@ -2,7 +2,13 @@
 
 namespace Jatniel\Pexels\Resources;
 
-readonly class Collection
+use Illuminate\Contracts\Support\Arrayable;
+use JsonSerializable;
+
+/**
+ * @implements Arrayable<string, mixed>
+ */
+readonly class Collection implements Arrayable, JsonSerializable
 {
     public function __construct(
         public string $id,
@@ -38,5 +44,13 @@ readonly class Collection
             'photos_count' => $this->photosCount,
             'videos_count' => $this->videosCount,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

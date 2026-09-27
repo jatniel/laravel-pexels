@@ -25,7 +25,7 @@ it('downloads photo using storage service when handled', function () {
     $photo = Photo::fromArray(Helpers::photoData());
     $job = new DownloadPhotoJob($photo, ['original', 'medium']);
 
-    $job->handle(new StorageService);
+    $job->handle(app(StorageService::class));
 
     Storage::disk('public')->assertExists('pexels/12345/original.jpg');
     Storage::disk('public')->assertExists('pexels/12345/medium.jpg');

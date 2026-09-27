@@ -17,54 +17,69 @@ class PexelsClient
 
     private const RATE_LIMIT_KEY = 'pexels-api-requests';
 
-    private string $apiKey;
-
-    public function __construct()
-    {
-        $this->apiKey = $this->resolveApiKey();
-    }
+    /**
+     * @param  int|null  $cacheTtl  Seconds to cache responses, null disables the cache.
+     * @param  int|null  $requestsPerHour  Local rate limit, null disables it.
+     */
+    public function __construct(
+        private readonly ?string $apiKey,
+        private readonly int $timeout = 10,
+        private readonly ?int $cacheTtl = 3600,
+        private readonly ?int $requestsPerHour = 200,
+    ) {}
 
     /**
-     * Resolve the API key based on environment.
+     * Build a client from the package configuration.
+     *
+     * The test key is used outside production when it is set.
+     *
+     * @param  array<string, mixed>  $config
      */
-    private function resolveApiKey(): string
+    public static function fromConfig(array $config, bool $production): self
     {
-        $testKey = config('pexels.api_key_test');
-        $productionKey = config('pexels.api_key');
+        $apiKey = ! $production && ! empty($config['api_key_test'])
+            ? $config['api_key_test']
+            : ($config['api_key'] ?? null);
 
-        // Use test key if available and not in production
-        if ($testKey && app()->environment() !== 'production') {
-            return $testKey;
-        }
-
-        if (! $productionKey) {
-            throw PexelsException::apiKeyMissing();
-        }
-
-        return $productionKey;
+        return new self(
+            apiKey: $apiKey ?: null,
+            timeout: (int) ($config['timeout'] ?? 10),
+            cacheTtl: ($config['cache']['enabled'] ?? true) ? (int) ($config['cache']['ttl'] ?? 3600) : null,
+            requestsPerHour: ($config['rate_limit']['enabled'] ?? true) ? (int) ($config['rate_limit']['requests_per_hour'] ?? 200) : null,
+        );
     }
 
     /**
      * Make a GET request to the Pexels API, using the cache when enabled.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>
      */
     public function get(string $endpoint, array $query = []): array
     {
-        if (! config('pexels.cache.enabled', true)) {
+        if ($this->cacheTtl === null) {
             return $this->send($endpoint, $query);
         }
 
         return Cache::remember(
             'pexels:'.md5($endpoint.serialize($query)),
-            (int) config('pexels.cache.ttl', 3600),
+            $this->cacheTtl,
             fn () => $this->send($endpoint, $query),
         );
     }
 
     /**
      * Send the request to the API and return the decoded body.
+     *
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>
      */
     private function send(string $endpoint, array $query): array
     {
+        if (! $this->apiKey) {
+            throw PexelsException::apiKeyMissing();
+        }
+
         $this->checkRateLimit();
 
         try {
@@ -86,7 +101,7 @@ class PexelsClient
         return Http::baseUrl(self::BASE_URL)
             ->withHeaders(['Authorization' => $this->apiKey])
             ->acceptJson()
-            ->timeout((int) config('pexels.timeout', 10))
+            ->timeout($this->timeout)
             ->retry(2, 200, fn ($e) => $e instanceof ConnectionException, throw: false);
     }
 
@@ -111,14 +126,12 @@ class PexelsClient
      */
     private function checkRateLimit(): void
     {
-        if (! config('pexels.rate_limit.enabled', true)) {
+        if ($this->requestsPerHour === null) {
             return;
         }
 
-        $limit = (int) config('pexels.rate_limit.requests_per_hour', 200);
-
-        if (RateLimiter::tooManyAttempts(self::RATE_LIMIT_KEY, $limit)) {
-            throw RateLimitException::exceeded($limit);
+        if (RateLimiter::tooManyAttempts(self::RATE_LIMIT_KEY, $this->requestsPerHour)) {
+            throw RateLimitException::exceeded($this->requestsPerHour);
         }
 
         RateLimiter::hit(self::RATE_LIMIT_KEY, 3600);
