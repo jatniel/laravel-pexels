@@ -5,14 +5,14 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/jatniel/laravel-pexels/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/jatniel/laravel-pexels/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/jatniel/laravel-pexels.svg?style=flat-square)](https://packagist.org/packages/jatniel/laravel-pexels)
 
-A Laravel package to integrate the [Pexels API](https://www.pexels.com/api/) for photos and videos. Search photos, get curated collections, download images locally, and use Blade components for easy integration.
+A Laravel package for the [Pexels API](https://www.pexels.com/api/). Search photos with filters, browse curated photos and collections, download images to any storage disk, and drop photos into your views with Blade components.
 
 > Developed by [Jatniel Guzmán](https://jatniel.dev) • [LinkedIn](https://www.linkedin.com/in/jatniel/) • [X/Twitter](https://x.com/jatnieldev)
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 11.0+
+- PHP 8.3+
+- Laravel 11, 12 or 13
 
 ## Installation
 
@@ -40,16 +40,47 @@ Get your free API key at [pexels.com/api](https://www.pexels.com/api/).
 use Jatniel\Pexels\Facades\Pexels;
 
 // Search photos
-$photos = Pexels::photos()->search('nature', perPage: 15);
+$photos = Pexels::photos()->search('nature', perPage: 15, page: 1);
 
-// Get a specific photo by ID
-$photo = Pexels::photos()->find(12345);
+// Search with filters
+$photos = Pexels::photos()->search(
+    'ocean',
+    orientation: 'landscape', // landscape, portrait, square
+    size: 'large',            // large (24MP), medium (12MP), small (4MP)
+    color: 'blue',            // color name or hex code (#ffffff)
+    locale: 'es-ES',
+);
 
 // Get curated photos
 $curated = Pexels::photos()->curated(perPage: 10);
 
-// Get a random photo
+// Get a specific photo by ID
+$photo = Pexels::photos()->find(12345);
+
+// Get a random photo (by query, or from curated photos)
 $random = Pexels::photos()->random('ocean');
+$random = Pexels::photos()->random();
+
+// Get the URL of a photo directly
+$url = Pexels::photos()->url(12345, 'medium');
+```
+
+### Pagination
+
+`search()`, `curated()` and the collection methods return a Laravel `LengthAwarePaginator` of `Photo` (or `Collection`) objects:
+```php
+$photos = Pexels::photos()->search('nature', perPage: 20, page: request('page', 1));
+
+$photos->total();       // Total results on Pexels
+$photos->currentPage();
+$photos->lastPage();
+
+foreach ($photos as $photo) {
+    echo $photo->getUrl('medium');
+}
+```
+```blade
+{{ $photos->links() }}
 ```
 
 ### Working with Photos
@@ -66,9 +97,20 @@ $photo->getUrl('small');
 // Get available sizes
 $photo->getSizes(); // ['original', 'large2x', 'large', 'medium', 'small', ...]
 
-// Get attribution (required by Pexels)
+// Get attribution (required by Pexels), escaped and safe to print with {!! !!}
 $photo->getAttribution(); // <a href="...">Photo by John Doe on Pexels</a>
 $photo->getAttribution(withLink: false); // Photo by John Doe on Pexels
+
+// Photo data
+$photo->id;
+$photo->width;
+$photo->height;
+$photo->photographer;
+$photo->avgColor;
+$photo->alt;
+
+// Photos (and collections) are Arrayable and JsonSerializable
+return response()->json($photo);
 ```
 
 ### Collections
@@ -88,10 +130,13 @@ $photo = Pexels::photos()->find(12345);
 $paths = Pexels::storage()->download($photo, 'original');
 // ['original' => '/storage/pexels/12345/original.jpg']
 
-// Download multiple sizes
+// Download multiple sizes (sizes already stored are skipped)
 $paths = Pexels::storage()->download($photo, ['original', 'medium', 'small']);
 
-// Async download (queued)
+// Force re-download
+$paths = Pexels::storage()->download($photo, 'original', force: true);
+
+// Async download (queued on the configured connection and queue)
 Pexels::storage()->downloadAsync($photo, ['original', 'medium']);
 
 // Check if photo exists locally
@@ -148,14 +193,42 @@ Pexels::storage()->delete(12345, 'medium'); // Specific size
 
 Available sizes: `original`, `large2x`, `large`, `medium`, `small`, `portrait`, `landscape`, `tiny`
 
+If the Pexels API fails (network error, rate limit, photo not found), the components render nothing and the exception is reported through Laravel's exception handler, so a Pexels outage never breaks your page.
+
+## Error Handling
+
+All exceptions extend `Jatniel\Pexels\Exceptions\PexelsException`:
+```php
+use Jatniel\Pexels\Exceptions\PexelsException;
+use Jatniel\Pexels\Exceptions\PhotoNotFoundException;
+use Jatniel\Pexels\Exceptions\RateLimitException;
+
+try {
+    $photo = Pexels::photos()->find(12345);
+} catch (PhotoNotFoundException $e) {
+    // The photo does not exist
+} catch (RateLimitException $e) {
+    // Local limit or Pexels API limit (HTTP 429) reached
+} catch (PexelsException $e) {
+    // Missing API key, connection error or any other API error
+}
+```
+
+## Caching and Rate Limiting
+
+API responses are cached (1 hour by default), and cached responses do not count toward the rate limit. The local rate limiter stops requests before you hit the Pexels limit (200 requests/hour on the free plan). Connection errors are retried twice.
+
 ## Configuration
 ```php
 // config/pexels.php
 
 return [
-    // API Keys
+    // API keys. PEXELS_API_KEY_TEST is used outside production when set.
     'api_key' => env('PEXELS_API_KEY'),
     'api_key_test' => env('PEXELS_API_KEY_TEST'),
+
+    // HTTP timeout in seconds
+    'timeout' => env('PEXELS_TIMEOUT', 10),
 
     // Cache settings
     'cache' => [
@@ -206,11 +279,11 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Issues and pull requests are welcome on [GitHub](https://github.com/jatniel/laravel-pexels). Please run `composer test`, `composer analyse` and `composer format` before submitting.
 
 ## Security Vulnerabilities
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+If you discover a security vulnerability, please email [hello@jatniel.dev](mailto:hello@jatniel.dev) instead of opening a public issue.
 
 ## Credits
 

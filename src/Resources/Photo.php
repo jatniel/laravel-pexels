@@ -10,6 +10,9 @@ use JsonSerializable;
  */
 readonly class Photo implements Arrayable, JsonSerializable
 {
+    /**
+     * @param  array<string, string>  $src  Image URL keyed by size.
+     */
     public function __construct(
         public int $id,
         public int $width,
@@ -23,6 +26,9 @@ readonly class Photo implements Arrayable, JsonSerializable
         public ?string $alt = null,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -48,6 +54,9 @@ readonly class Photo implements Arrayable, JsonSerializable
         return $this->src[$size] ?? $this->src['original'];
     }
 
+    /**
+     * @return list<string>
+     */
     public function getSizes(): array
     {
         return array_keys($this->src);

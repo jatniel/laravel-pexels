@@ -13,6 +13,9 @@ class DownloadPhotoJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * @param  list<string>  $sizes
+     */
     public function __construct(
         public readonly Photo $photo,
         public readonly array $sizes = ['original'],

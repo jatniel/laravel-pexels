@@ -2,7 +2,6 @@
     "name": "jatniel/laravel-pexels",
     "description": "Laravel integration for the Pexels API: search photos, collections, local downloads and Blade components",
     "keywords": [
-        "Jatniel Guzmán",
         "laravel",
         "laravel-pexels",
         "pexels",
@@ -13,7 +12,7 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Jatniel Guzmán",
+            "name": "Jatniel Guzmán",
             "email": "hello@jatniel.dev",
             "role": "Developer"
         }

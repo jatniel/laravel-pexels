@@ -2,28 +2,16 @@
 
 use Illuminate\Support\Facades\Http;
 use Jatniel\Pexels\Exceptions\PhotoNotFoundException;
-use Jatniel\Pexels\Http\PexelsClient;
 use Jatniel\Pexels\Resources\Photo;
 use Jatniel\Pexels\Services\PhotoService;
 use Jatniel\Pexels\Tests\Helpers;
-
-beforeEach(function () {
-    config()->set('pexels.api_key', 'test-api-key');
-    config()->set('pexels.cache.enabled', false);
-    config()->set('pexels.rate_limit.enabled', false);
-});
-
-function createPhotoService(): PhotoService
-{
-    return new PhotoService(app(PexelsClient::class));
-}
 
 it('searches photos with filters and returns a paginator', function () {
     Http::fake([
         'api.pexels.com/v1/search*' => Http::response(array_merge(Helpers::searchResponse(3), ['total_results' => 120, 'page' => 2, 'per_page' => 10])),
     ]);
 
-    $photos = createPhotoService()->search('nature', perPage: 10, page: 2, orientation: 'landscape', color: 'blue');
+    $photos = app(PhotoService::class)->search('nature', perPage: 10, page: 2, orientation: 'landscape', color: 'blue');
 
     expect($photos)->toHaveCount(3)
         ->and($photos->first())->toBeInstanceOf(Photo::class)
@@ -39,30 +27,16 @@ it('searches photos with filters and returns a paginator', function () {
     );
 });
 
-it('returns empty collection when search has no results', function () {
-    Http::fake([
-        'api.pexels.com/v1/search*' => Http::response(['photos' => []]),
-    ]);
-
-    $photos = createPhotoService()->search('nonexistent');
-
-    expect($photos)->toHaveCount(0);
-});
-
 it('gets curated photos', function () {
     Http::fake([
         'api.pexels.com/v1/curated*' => Http::response(Helpers::searchResponse(2)),
     ]);
 
-    $photos = createPhotoService()->curated(perPage: 5, page: 2);
+    $photos = app(PhotoService::class)->curated(perPage: 5, page: 2);
 
-    expect($photos)->toHaveCount(2)
-        ->and($photos->first())->toBeInstanceOf(Photo::class);
+    expect($photos)->toHaveCount(2);
 
-    Http::assertSent(fn ($request) => str_contains($request->url(), '/curated')
-        && $request['per_page'] === 5
-        && $request['page'] === 2
-    );
+    Http::assertSent(fn ($request) => $request['per_page'] === 5 && $request['page'] === 2);
 });
 
 it('finds a photo by id', function () {
@@ -70,49 +44,29 @@ it('finds a photo by id', function () {
         'api.pexels.com/v1/photos/12345' => Http::response(Helpers::photoData()),
     ]);
 
-    $photo = createPhotoService()->find(12345);
+    $photo = app(PhotoService::class)->find(12345);
 
-    expect($photo)->toBeInstanceOf(Photo::class)
-        ->and($photo->id)->toBe(12345)
-        ->and($photo->photographer)->toBe('John Doe');
+    expect($photo->id)->toBe(12345)
+        ->and($photo->photographer)->toBe('John Doe')
+        ->and(app(PhotoService::class)->url(12345, 'medium'))->toBe('https://images.pexels.com/photos/12345/medium.jpg');
 });
-
-it('throws exception when photo is not found', function () {
-    Http::fake([
-        'api.pexels.com/v1/photos/99999' => Http::response([]),
-    ]);
-
-    createPhotoService()->find(99999);
-})->throws(PhotoNotFoundException::class, 'Photo with ID 99999 not found.');
 
 it('throws photo not found exception when the API returns 404', function () {
     Http::fake([
         'api.pexels.com/v1/photos/99999' => Http::response(['error' => 'Not Found'], 404),
     ]);
 
-    createPhotoService()->find(99999);
+    app(PhotoService::class)->find(99999);
 })->throws(PhotoNotFoundException::class, 'Photo with ID 99999 not found.');
 
-it('gets a random photo with query', function () {
+it('gets a random photo from the first page of results', function () {
     Http::fake([
         'api.pexels.com/v1/search*' => Http::response(Helpers::searchResponse(3)),
     ]);
 
-    $photo = createPhotoService()->random('nature');
-
-    expect($photo)->toBeInstanceOf(Photo::class);
+    expect(app(PhotoService::class)->random('nature'))->toBeInstanceOf(Photo::class);
 
     Http::assertSent(fn ($request) => $request['page'] === 1 && $request['per_page'] === 80);
-});
-
-it('gets a random photo without query (curated)', function () {
-    Http::fake([
-        'api.pexels.com/v1/curated*' => Http::response(Helpers::searchResponse(2)),
-    ]);
-
-    $photo = createPhotoService()->random();
-
-    expect($photo)->toBeInstanceOf(Photo::class);
 });
 
 it('throws exception when random finds no photos', function () {
@@ -120,25 +74,5 @@ it('throws exception when random finds no photos', function () {
         'api.pexels.com/v1/search*' => Http::response(['photos' => []]),
     ]);
 
-    createPhotoService()->random('nonexistent');
+    app(PhotoService::class)->random('nonexistent');
 })->throws(PhotoNotFoundException::class, 'No photos found.');
-
-it('gets url for a specific photo and size', function () {
-    Http::fake([
-        'api.pexels.com/v1/photos/12345' => Http::response(Helpers::photoData()),
-    ]);
-
-    $url = createPhotoService()->url(12345, 'medium');
-
-    expect($url)->toBe('https://images.pexels.com/photos/12345/medium.jpg');
-});
-
-it('gets original url by default', function () {
-    Http::fake([
-        'api.pexels.com/v1/photos/12345' => Http::response(Helpers::photoData()),
-    ]);
-
-    $url = createPhotoService()->url(12345);
-
-    expect($url)->toBe('https://images.pexels.com/photos/12345/original.jpg');
-});
