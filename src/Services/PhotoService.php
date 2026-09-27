@@ -3,6 +3,7 @@
 namespace Jatniel\Pexels\Services;
 
 use Illuminate\Support\Collection;
+use Jatniel\Pexels\Exceptions\PexelsException;
 use Jatniel\Pexels\Exceptions\PhotoNotFoundException;
 use Jatniel\Pexels\Http\PexelsClient;
 use Jatniel\Pexels\Resources\Photo;
@@ -45,7 +46,11 @@ class PhotoService
      */
     public function find(int $id): Photo
     {
-        $response = $this->client->get("/photos/{$id}");
+        try {
+            $response = $this->client->get("/photos/{$id}");
+        } catch (PexelsException $e) {
+            throw $e->getCode() === 404 ? PhotoNotFoundException::withId($id) : $e;
+        }
 
         if (empty($response['id'])) {
             throw PhotoNotFoundException::withId($id);

@@ -80,6 +80,14 @@ it('throws exception when photo is not found', function () {
     createPhotoService()->find(99999);
 })->throws(PhotoNotFoundException::class, 'Photo with ID 99999 not found.');
 
+it('throws photo not found exception when the API returns 404', function () {
+    Http::fake([
+        'api.pexels.com/v1/photos/99999' => Http::response(['error' => 'Not Found'], 404),
+    ]);
+
+    createPhotoService()->find(99999);
+})->throws(PhotoNotFoundException::class, 'Photo with ID 99999 not found.');
+
 it('gets a random photo with query', function () {
     Http::fake([
         'api.pexels.com/v1/search*' => Http::response(Helpers::searchResponse(3)),
